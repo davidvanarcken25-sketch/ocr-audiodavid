@@ -1,187 +1,107 @@
 import streamlit as st
-import os
-import time
-import glob
-import os
 import cv2
 import numpy as np
 import pytesseract
 from PIL import Image
-from gtts import gTTS
-from googletrans import Translator
+import io
 
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(page_title="Cyber OCR Scanner", page_icon="💠", layout="wide")
 
-text=" "
+# --- ESTILO CIBERNÉTICO ---
+st.markdown("""
+    <style>
+        [data-testid="stAppViewContainer"] {
+            background: linear-gradient(135deg, #020024, #090979 40%, #00d4ff 100%);
+            color: #d9faff;
+        }
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #00111f, #002d42);
+            color: #d9faff;
+        }
+        [data-testid="stHeader"] {
+            background: rgba(0, 0, 0, 0);
+        }
+        h1, h2, h3 {
+            color: #00e5ff !important;
+            text-shadow: 0 0 12px #00e5ff;
+        }
+        .stButton>button {
+            background: linear-gradient(90deg, #00c6ff, #0072ff);
+            color: white;
+            border-radius: 10px;
+            border: none;
+            font-weight: bold;
+            padding: 0.6em 1.3em;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 12px #00e5ff;
+        }
+        .stButton>button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 18px #00e5ff;
+        }
+        .stRadio label {
+            color: #bffaff !important;
+        }
+        .stTextInput>div>div>input {
+            background-color: rgba(0, 0, 20, 0.6);
+            color: #00e5ff;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-def text_to_speech(input_language, output_language, text, tld):
-    translation = translator.translate(text, src=input_language, dest=output_language)
-    trans_text = translation.text
-    tts = gTTS(trans_text, lang=output_language, tld=tld, slow=False)
-    try:
-        my_file_name = text[0:20]
-    except:
-        my_file_name = "audio"
-    tts.save(f"temp/{my_file_name}.mp3")
-    return my_file_name, trans_text
-
-
-
-
-def remove_files(n):
-    mp3_files = glob.glob("temp/*mp3")
-    if len(mp3_files) != 0:
-        now = time.time()
-        n_days = n * 86400
-        for f in mp3_files:
-            if os.stat(f).st_mtime < now - n_days:
-                os.remove(f)
-                print("Deleted ", f)
-
-
-remove_files(7)
-  
-
-
-
-st.title("Reconocimiento Óptico de Caracteres")
-st.subheader("Elige la fuente de la imágen, esta puede venir de la cámara o cargando un archivo")
-
-cam_ = st.checkbox("Usar Cámara")
-
-if cam_ :
-   img_file_buffer = st.camera_input("Toma una Foto")
-else :
-   img_file_buffer = None
-   
-with st.sidebar:
-      st.subheader("Procesamiento para Cámara")
-      filtro = st.radio("Filtro para imagen con cámara",('Sí', 'No'))
-
-bg_image = st.file_uploader("Cargar Imagen:", type=["png", "jpg"])
-if bg_image is not None:
-    uploaded_file=bg_image
-    st.image(uploaded_file, caption='Imagen cargada.', use_container_width=True)
-    
-    # Guardar la imagen en el sistema de archivos
-    with open(uploaded_file.name, 'wb') as f:
-        f.write(uploaded_file.read())
-    
-    st.success(f"Imagen guardada como {uploaded_file.name}")
-    img_cv = cv2.imread(f'{uploaded_file.name}')
-    img_rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
-    text= pytesseract.image_to_string(img_rgb)
-st.write(text)  
-    
-      
-if img_file_buffer is not None:
-    # To read image file buffer with OpenCV:
-    bytes_data = img_file_buffer.getvalue()
-    cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-
-    
-    if filtro == 'Con Filtro':
-         cv2_img=cv2.bitwise_not(cv2_img)
-    else:
-        cv2_img= cv2_img
-          
-        
-    img_rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
-    text=pytesseract.image_to_string(img_rgb) 
-    st.write(text) 
+# --- INTERFAZ ---
+st.title("💠 Cyber OCR Scanner 💠")
+st.subheader("Convierte imágenes en texto digital con estilo futurista ⚡")
 
 with st.sidebar:
-      st.subheader("Parámetros de traducción")
-      
-      try:
-          os.mkdir("temp")
-      except:
-          pass
-      #st.title("Text to speech")
-      translator = Translator()
-      
-      #text = st.text_input("Enter text")
-      in_lang = st.selectbox(
-          "Seleccione el lenguaje de entrada",
-          ("Ingles", "Español", "Bengali", "koreano", "Mandarin", "Japones"),
-      )
-      if in_lang == "Ingles":
-          input_language = "en"
-      elif in_lang == "Español":
-          input_language = "es"
-      elif in_lang == "Bengali":
-          input_language = "bn"
-      elif in_lang == "koreano":
-          input_language = "ko"
-      elif in_lang == "Mandarin":
-          input_language = "zh-cn"
-      elif in_lang == "Japones":
-          input_language = "ja"
-      
-      out_lang = st.selectbox(
-          "Select your output language",
-          ("Ingles", "Español", "Bengali", "koreano", "Mandarin", "Japones"),
-      )
-      if out_lang == "Ingles":
-          output_language = "en"
-      elif out_lang == "Español":
-          output_language = "es"
-      elif out_lang == "Bengali":
-          output_language = "bn"
-      elif out_lang == "koreano":
-          output_language = "ko"
-      elif out_lang == "Chinese":
-          output_language = "zh-cn"
-      elif out_lang == "Japones":
-          output_language = "ja"
-      
-      english_accent = st.selectbox(
-          "Seleccione el acento",
-          (
-              "Default",
-              "India",
-              "United Kingdom",
-              "United States",
-              "Canada",
-              "Australia",
-              "Ireland",
-              "South Africa",
-          ),
-      )
-      
-      if english_accent == "Default":
-          tld = "com"
-      elif english_accent == "India":
-          tld = "co.in"
-      
-      elif english_accent == "United Kingdom":
-          tld = "co.uk"
-      elif english_accent == "United States":
-          tld = "com"
-      elif english_accent == "Canada":
-          tld = "ca"
-      elif english_accent == "Australia":
-          tld = "com.au"
-      elif english_accent == "Ireland":
-          tld = "ie"
-      elif english_accent == "South Africa":
-          tld = "co.za"
+    st.header("⚙️ Opciones de escaneo")
+    modo = st.radio("Fuente de imagen", ["Subir Imagen", "Capturar con Cámara"])
+    filtros = st.checkbox("Aplicar realce de contraste", value=True)
+    mostrar_cajas = st.checkbox("Mostrar cajas de texto detectado", value=True)
 
-      display_output_text = st.checkbox("Mostrar texto")
+# --- CARGA DE IMAGEN ---
+img = None
+if modo == "Subir Imagen":
+    uploaded_file = st.file_uploader("📂 Sube una imagen", type=["jpg", "jpeg", "png"])
+    if uploaded_file:
+        img = Image.open(uploaded_file)
+elif modo == "Capturar con Cámara":
+    camera_file = st.camera_input("📸 Captura una imagen")
+    if camera_file:
+        img = Image.open(camera_file)
 
-      if st.button("convert"):
-          result, output_text = text_to_speech(input_language, output_language, text, tld)
-          audio_file = open(f"temp/{result}.mp3", "rb")
-          audio_bytes = audio_file.read()
-          st.markdown(f"## Tu audio:")
-          st.audio(audio_bytes, format="audio/mp3", start_time=0)
-      
-          if display_output_text:
-              st.markdown(f"## Texto de salida:")
-              st.write(f" {output_text}")
+# --- PROCESAMIENTO ---
+if img is not None:
+    st.image(img, caption="🧭 Imagen Original", use_container_width=True)
+    img_cv = np.array(img)
+    img_gray = cv2.cvtColor(img_cv, cv2.COLOR_RGB2GRAY)
 
+    if filtros:
+        img_gray = cv2.convertScaleAbs(img_gray, alpha=1.5, beta=30)
 
+    # OCR con pytesseract
+    data = pytesseract.image_to_data(img_gray, output_type=pytesseract.Output.DICT)
+    text = " ".join(data["text"]).strip()
 
+    # Dibuja cajas
+    if mostrar_cajas:
+        for i in range(len(data["text"])):
+            if int(data["conf"][i]) > 60:  # confianza mínima
+                (x, y, w, h) = (data["left"][i], data["top"][i], data["width"][i], data["height"][i])
+                cv2.rectangle(img_cv, (x, y), (x + w, y + h), (0, 255, 255), 2)
 
- 
-    
-    
+    st.image(img_cv, caption="🔍 Resultado con detección", use_container_width=True)
+
+    # Mostrar texto
+    st.markdown("### 💾 Texto Detectado:")
+    st.text_area("Texto extraído", text, height=200)
+
+    # Opción para descargar el texto
+    if text:
+        buffer = io.BytesIO(text.encode('utf-8'))
+        st.download_button("⬇️ Descargar texto", buffer, file_name="texto_detectado.txt")
+
+else:
+    st.info("👾 Sube o captura una imagen para comenzar el escaneo.")
+
